@@ -1,12 +1,12 @@
 /*++
 
-        ##     ## ######## ##     ## ########
-        ##     ## ##       ##     ## ##     ##
-        ##     ## ##       ##     ## ##     ##
-        ######### ######   ##     ## ##     ##
-        ##     ## ##        ##   ##  ##     ##
-        ##     ## ##         ## ##   ##     ##
-        ##     ## ########    ###    ########
+          ##     ## ######## ##     ## ########
+          ##     ## ##       ##     ## ##     ##
+          ##     ## ##       ##     ## ##     ##
+          ######### ######   ##     ## ##     ##
+          ##     ## ##        ##   ##  ##     ##
+          ##     ## ##         ## ##   ##     ##
+          ##     ## ########    ###    ########
 
             HackSys Extreme Vulnerable Driver
 
@@ -39,15 +39,24 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 See the file 'LICENSE' for complete copying permission.
 
 Module Name:
-    IntegerOverlfow.c
+    UninitializedMemoryStack.c
 
 Abstract:
     This module implements the functions to demonstrate
-    integer overflow in kernel module
+    use of uninitialized memory in Stack vulnerability.
 
 --*/
 
-#include "IntegerOverflow.h"
+#include "UninitializedMemoryStack.h"
+
+/// <summary>
+/// Uninitialized Memory Stack Object Callback
+/// </summary>
+void
+UninitializedMemoryStackObjectCallback(void)
+{
+    INFO("[+] Uninitialized Memory Stack Object Callback\n");
+}
 
 
 /**
@@ -55,62 +64,51 @@ Abstract:
  * @param[in] size size of the user mode buffer
  * @return status code
  */
-int trigger_integer_overflow(void *user_buffer, size_t size)
+int trigger_uninitialized_memory_stack(void *user_buffer, size_t size)
 {
-    unsigned long count = 0;
+    unsigned long UserValue = 0;
+    unsigned long MagicValue = 0xBAD0B0B0;
     int status = STATUS_SUCCESS;
-    unsigned long kernel_buffer[BUFFER_SIZE] = {0};
-    unsigned long kernel_buffer_terminator = 0xBAD0B0B0;
-    size_t terminator_size = sizeof(kernel_buffer_terminator);
-
-    INFO("[+] user_buffer: 0x%p\n", user_buffer);
-    INFO("[+] user_buffer size: 0x%zX\n", size);
-    INFO("[+] kernel_buffer: 0x%p\n", &kernel_buffer);
-    INFO("[+] kernel_buffer size: 0x%zX\n", sizeof(kernel_buffer));
 
 #ifdef SECURE
-    /**
-     * Secure Note: This is secure because the developer is not doing any arithmetic
-     * on the user supplied value. Instead, the developer is subtracting the size of
-     * UINT i.e. 4 on x86 from the size of KernelBuffer. Hence, integer overflow will
-     * not occur and this check will not fail
-     */
+    //
+    // Secure Note: This is secure because the developer is properly initializing
+    // UNINITIALIZED_MEMORY_STACK to NULL and checks for NULL pointer before calling
+    // the callback
+    //
 
-    if (size > (sizeof(kernel_buffer) - terminator_size))
-    {
-        ERR("[-] Invalid user buffer size: 0x%zX\n", size);
-
-        status = -EINVAL;
-        return status;
-    }
-
+    UNINITIALIZED_MEMORY_STACK UninitializedMemory = { 0 };
 #else
-    INFO("[+] Triggering Integer Overflow\n");
+    //
+    // Vulnerability Note: This is a vanilla Uninitialized Memory in Stack vulnerability
+    // because the developer is not initializing 'UNINITIALIZED_MEMORY_STACK' structure
+    // before calling the callback when 'MagicValue' does not match 'UserValue'
+    //
 
-    /**
-     * Vulnerability Note: This is a vanilla Integer Overflow vulnerability because if
-     * 'Size' is 0xFFFFFFFF and we do an addition with size of ULONG i.e. 4 on x86, the
-     * integer will wrap down and will finally cause this check to fail
-     */
-
-    if ((size + terminator_size) > sizeof(kernel_buffer))
-    {
-        ERR("[-] Invalid user buffer size: 0x%zX\n", size);
-
-        status = -EINVAL;
-        return status;
-    }
+    UNINITIALIZED_MEMORY_STACK UninitializedMemory;
 #endif
 
-    while (count < (size / sizeof(unsigned long)))
-    {
-        unsigned long n;
+    if(copy_from_user(&UserValue, user_buffer, sizeof(UserValue))) {
+        ERR("Failed to copy UserValue from user space\n");
 
-        copy_from_user((void *)&n, user_buffer + count, sizeof(n));
-        if (n == kernel_buffer_terminator)
-            break;
+        status = -EINVAL;
+        return status;
+    }
 
-        kernel_buffer[count++] = n;
+    INFO("[+] UserValue: [0x%p] [0x%zX]\n", &UserValue, UserValue);
+    INFO("[+] UninitializedMemory Address: 0x%p\n", &UninitializedMemory);
+
+    if (UserValue == MagicValue) {
+        UninitializedMemory.Value = UserValue;
+        UninitializedMemory.Callback = &UninitializedMemoryStackObjectCallback;
+    }
+
+#ifndef SECURE
+    INFO("[+] Triggering Uninitialized Memory in Stack\n");
+#endif
+
+    if (UninitializedMemory.Callback) {
+        UninitializedMemory.Callback();
     }
 
     return status;
@@ -121,7 +119,7 @@ int trigger_integer_overflow(void *user_buffer, size_t size)
  * @param[in] io user space buffer
  * @return status code
  */
-int integer_overflow_ioctl_handler(struct hevd_io *io)
+int uninitialized_memory_stack_ioctl_handler(struct hevd_io *io)
 {
     size_t size = 0;
     void *user_buffer = NULL;
@@ -132,7 +130,7 @@ int integer_overflow_ioctl_handler(struct hevd_io *io)
 
     if (user_buffer)
     {
-        status = trigger_integer_overflow(user_buffer, size);
+        status = trigger_uninitialized_memory_stack(user_buffer, size);
     }
 
     return status;

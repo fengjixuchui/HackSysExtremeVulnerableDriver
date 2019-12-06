@@ -39,18 +39,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 See the file 'LICENSE' for complete copying permission.
 
 Module Name:
-    UseAfterFreeNonPagedPool.h
+    UninitializedMemoryStack.h
 
 Abstract:
     This module implements the data structures for
-    use after free in NonPagedPool module.
+    uninitialized memory in Stack module.
 
 --*/
 
-#pragma once
-
-#ifndef __USE_AFTER_FREE_NON_PAGED_POOL_H__
-#define __USE_AFTER_FREE_NON_PAGED_POOL_H__
+#ifndef __UNINITIALIZED_MEMORY_STACK_H__
+#define __UNINITIALIZED_MEMORY_STACK_H__
 
 #include "Common.h"
 
@@ -59,45 +57,21 @@ Abstract:
 // Structures
 //
 
-typedef struct _USE_AFTER_FREE_NON_PAGED_POOL
+typedef struct _UNINITIALIZED_MEMORY_STACK
 {
+    unsigned long Value;
     FunctionPointer Callback;
-    CHAR Buffer[0x54];
-} USE_AFTER_FREE_NON_PAGED_POOL, *PUSE_AFTER_FREE_NON_PAGED_POOL;
-
-typedef struct _FAKE_OBJECT_NON_PAGED_POOL
-{
-    CHAR Buffer[0x54 + sizeof(PVOID)];
-} FAKE_OBJECT_NON_PAGED_POOL, *PFAKE_OBJECT_NON_PAGED_POOL;
+    unsigned long Buffer[58];
+} UNINITIALIZED_MEMORY_STACK, *PUNINITIALIZED_MEMORY_STACK;
 
 
 //
 // Function Definitions
 //
 
-VOID
-UaFObjectCallbackNonPagedPool(
-    VOID
-);
+void
+UninitializedMemoryStackObjectCallback(void);
 
-NTSTATUS
-UseUaFObjectNonPagedPool(
-    VOID
-);
+int trigger_uninitialized_memory_stack(void *user_buffer, size_t size);
 
-NTSTATUS
-FreeUaFObjectNonPagedPool(
-    VOID
-);
-
-NTSTATUS
-AllocateUaFObjectNonPagedPool(
-    VOID
-);
-
-NTSTATUS
-AllocateFakeObjectNonPagedPool(
-    _In_ PFAKE_OBJECT_NON_PAGED_POOL UserFakeObject
-);
-
-#endif  // !__USE_AFTER_FREE_NON_PAGED_POOL_H__
+#endif  // !__UNINITIALIZED_MEMORY_STACK_H__

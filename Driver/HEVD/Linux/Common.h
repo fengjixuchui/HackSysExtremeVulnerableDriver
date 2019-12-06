@@ -67,6 +67,8 @@ Abstract:
 
 #define BUFFER_SIZE 512
 
+#define STATUS_SUCCESS      0x0
+
 #define _STRINGIFY(value) #value
 #define STRINGIFY(value) _STRINGIFY(value)
 
@@ -110,5 +112,6 @@ struct hevd_io {
 int buffer_overflow_stack_ioctl_handler(struct hevd_io *io);
 int integer_overflow_ioctl_handler(struct hevd_io *io);
 int arbitrary_write_ioctl_handler(struct hevd_io *io);
+int uninitialized_memory_stack_ioctl_handler(struct hevd_io *io);
 
 #endif // !__COMMON_H__

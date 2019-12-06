@@ -54,12 +54,13 @@ Abstract:
 /**
  * Trigger the buffer overflow in Stack Vulnerability
  * 
- * @param user_buffer the pointer to user mode buffer
- * @param size size of the user mode buffer
+ * @param[in] user_buffer the pointer to user mode buffer
+ * @param[in] size size of the user mode buffer
+ * @return status code
  */
 int trigger_buffer_overflow_stack(void *user_buffer, size_t size)
 {
-    int status = -EINVAL;
+    int status = STATUS_SUCCESS;
     unsigned long kernel_buffer[BUFFER_SIZE] = { 0 };
 
     INFO("[+] user_buffer: 0x%p\n", user_buffer);

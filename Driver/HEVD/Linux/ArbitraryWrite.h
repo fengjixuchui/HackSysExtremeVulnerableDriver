@@ -63,13 +63,13 @@ typedef struct _WRITE_WHAT_WHERE
 {
     void *What;
     void *Where;
-} __attribute__((packed)) WRITE_WHAT_WHERE, *PWRITE_WHAT_WHERE;
+} WRITE_WHAT_WHERE, *PWRITE_WHAT_WHERE;
 
 
 //
 // Function Definitions
 //
 
-int trigger_arbitrary_write(void *user_buffer, size_t size);
+int trigger_arbitrary_write(PWRITE_WHAT_WHERE user_write_what_where);
 
 #endif // !__ARBITRARY_WRITE_H__
